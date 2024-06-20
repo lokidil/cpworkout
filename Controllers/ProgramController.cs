@@ -6,28 +6,67 @@ namespace CPWorkout.Controllers
     [Route("[controller]")]
     public class ProgramController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
         private readonly ILogger<ProgramController> _logger;
-
-        public ProgramController(ILogger<ProgramController> logger)
+        private readonly ICosmosService _cosmosService;
+        public ProgramController(ICosmosService cosmosService, ILogger<ProgramController> logger)
         {
+            _cosmosService = cosmosService;
             _logger = logger;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        [HttpGet(Name = "Program")]
+        public async Task<ProgramDetailsResponse> Get([FromQuery] ProgramIdRequest programIdRequest)
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            try
             {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+                var program = await _cosmosService.GetItem<Program>(programIdRequest.Id, programIdRequest.Country);
+                if (program == null)
+                {
+                    return new ProgramDetailsResponse() { ErrorCode = 1000, Message = "Failed" };
+                }
+                var questions = program.Questions ?? null;
+                var programDetails = new ProgramDetails()
+                {
+                    Description = program.Description,
+                    Title = program.Title
+                };
+                programDetails.Questions = Common.GetQuestionsResponse(program);
+                return new ProgramDetailsResponse() { Message = "Success", ErrorCode = 0, ProgramDetails = programDetails };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new ProgramDetailsResponse() { ErrorCode = 1000, Message = "Failed" };
+            }
+        }
+
+        [HttpPost(Name = "Program")]
+        public async Task<ProgramResponse> Post(ProgramRequest programRequest)
+        {
+            try
+            {
+                var questionsArray = Common.GetQuestions(programRequest);
+                var program = (new Program(Guid.NewGuid().ToString())
+                {
+                    Title = programRequest.Title,
+                    Description = programRequest.Description,
+                    Questions = questionsArray
+                });
+                var response = await _cosmosService.AddItem<Program>(program, program.Country);
+                if (response != null)
+                {
+                    return new ProgramResponse() { Message = "Success", Id = response.Id.Value, ErrorCode = 0 };
+                }
+                else
+                {
+                    return new ProgramResponse() { Message = "Failed", Id = Guid.Empty.ToString(), ErrorCode = 1000 };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new ProgramResponse() { Message = "Failed", Id = Guid.Empty.ToString(), ErrorCode = 1000 };
+            }
         }
     }
 }
