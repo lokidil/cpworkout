@@ -29,5 +29,19 @@
             }
             return null;
         }
+
+        public static Application[]? GetApplications(CandidateRequest candidateRequest)
+        {
+            if (candidateRequest.Applications != null && candidateRequest.Applications.Length > 0)
+            {
+                var applications = new List<Application>();
+                foreach (var application in candidateRequest.Applications)
+                {
+                    applications.Add(new Application() { QuestionId = application.QuestionId, Responses = application.Responses });
+                }
+                return applications.ToArray();
+            }
+            return null;
+        }
     }
 }

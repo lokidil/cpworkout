@@ -135,10 +135,68 @@ namespace CPWorkout
         }
     }
 
+    [JsonConverter(typeof(CandidateIdConverter))]
+    public class CandidateId
+    {
+        public string Value { get; internal set; }
+        protected CandidateId() { }
+
+        internal CandidateId(string value) => Value = value;
+
+        public static CandidateId FromString(string candidateId)
+        {
+            CheckValidity(candidateId);
+            return new CandidateId(candidateId);
+        }
+
+        public static implicit operator string(CandidateId candidateId) => candidateId.Value;
+
+        public override string ToString()
+        {
+            return Value;
+        }
+        private static void CheckValidity(string value)
+        {
+            if (!Guid.TryParse(value, out _))
+            {
+                throw new ArgumentException(nameof(value), "Candidate Id is not a GUID.");
+            }
+        }
+    }
+
+    class CandidateIdConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return (objectType == typeof(CandidateId));
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            return QuestionId.FromString(JToken.Load(reader).ToString());
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            JToken.FromObject(value.ToString()).WriteTo(writer);
+        }
+    }
+
     public class Candidate
     {
         [JsonProperty(PropertyName = "id")]
-        public string? Id { get; set; }
+        public CandidateId Id { get; set; }
+
+        public Candidate(string id)
+        {
+            Id = CandidateId.FromString(id);
+        }
+
+        public string Country { get; set; } = "India";
+        public required string FirstName { get; set; }
+        public string? LastName { get; set; }
+        public required string EmailId { get; set; }
+        public required string Phone { get; set; }
         public required string ProgramId { get; set; }
         public Application[]? Applications { get; set; }
         public override string ToString()

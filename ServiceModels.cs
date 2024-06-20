@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace CPWorkout
 {
     public class Response
@@ -65,4 +67,28 @@ namespace CPWorkout
 
     }
 
-}
+    public class ApplicationRequest
+    {
+        public required string QuestionId { get; set; }
+        public string[]? Responses { get; set; }
+    }
+
+
+    public class CandidateRequest
+    {
+        public required string FirstName { get; set; }
+        public string? LastName { get; set; }
+        [EmailAddress(ErrorMessage = "Not a valid email id")]
+        public required string EmailId { get; set; }
+        [RegularExpression(@"^(\d{10})$", ErrorMessage = "Not a valid phone number")]
+        public required string Phone { get; set; }
+        public required string ProgramId { get; set; }
+        public ApplicationRequest[]? Applications { get; set; }
+    }
+
+    public class CandidateResponse:Response
+    {
+        public required string CandidateId { get; set; }
+    }
+
+ }
