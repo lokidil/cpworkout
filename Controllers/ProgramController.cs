@@ -104,7 +104,7 @@ namespace CPWorkout.Controllers
             try
             {
                 var program = await _cosmosService.DeleteItem<Program>(programIdRequest.Id, programIdRequest.Country);
-                if (program == null)
+                if (!program)
                 {
                     return new Response() { ErrorCode = 1000, Message = "Failed" };
                 }

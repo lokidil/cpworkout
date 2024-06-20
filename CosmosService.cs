@@ -12,7 +12,7 @@ namespace CPWorkout
 
         public Task<T?> UpdateItem<T>(T item, string partitionKey);
 
-        public Task<T?> DeleteItem<T>(string id, string partitionKey);
+        public Task<bool> DeleteItem<T>(string id, string partitionKey);
     }
     public class CosmosService : ICosmosService
     {
@@ -98,14 +98,14 @@ namespace CPWorkout
             return default(T);
         }
 
-        public async Task<T?> DeleteItem<T>(string id, string partitionKey)
+        public async Task<bool> DeleteItem<T>(string id, string partitionKey)
         {
             try
             {
                 var deletededItem = await _container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey));
                 if (deletededItem != null && deletededItem.StatusCode == HttpStatusCode.NoContent)
                 {
-                    return deletededItem.Resource;
+                    return true;
                 }
                 else
                 {
