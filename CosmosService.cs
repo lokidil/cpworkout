@@ -9,6 +9,10 @@ namespace CPWorkout
         public Task<T?> AddItem<T>(T item, string partitionKey);
 
         public Task<T?> GetItem<T>(string id, string partitionKey);
+
+        public Task<T?> UpdateItem<T>(T item, string partitionKey);
+
+        public Task<T?> DeleteItem<T>(string id, string partitionKey);
     }
     public class CosmosService : ICosmosService
     {
@@ -37,12 +41,12 @@ namespace CPWorkout
             }
             catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
             {
-                System.Console.WriteLine("Conflict Error - " + ex.Message);
+                Console.WriteLine("Conflict Error - " + ex.Message);
                 throw;
             }
             catch (CosmosException ex)
             {
-                System.Console.WriteLine("Unknown Exception - " + ex.Message);
+                Console.WriteLine("Unknown Exception - " + ex.Message);
                 throw;
             }
             return default(T);
@@ -64,7 +68,53 @@ namespace CPWorkout
             }
             catch (CosmosException ex)
             {
-                System.Console.WriteLine("Unknown Exception - " + ex.Message);
+                Console.WriteLine("Unknown Exception - " + ex.Message);
+                throw;
+            }
+        }
+
+        public async Task<T?> UpdateItem<T>(T item, string partitionKey)
+        {
+            try
+            {
+                ItemResponse<T> response = await _container.UpsertItemAsync<T>(item, new PartitionKey(partitionKey));
+                HttpStatusCode status = response.StatusCode;
+                if (status == HttpStatusCode.OK)
+                {
+                    var createdItem = response.Resource;
+                    return createdItem;
+                }
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+            {
+                Console.WriteLine("Conflict Error - " + ex.Message);
+                throw;
+            }
+            catch (CosmosException ex)
+            {
+                Console.WriteLine("Unknown Exception - " + ex.Message);
+                throw;
+            }
+            return default(T);
+        }
+
+        public async Task<T?> DeleteItem<T>(string id, string partitionKey)
+        {
+            try
+            {
+                var deletededItem = await _container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey));
+                if (deletededItem != null && deletededItem.StatusCode == HttpStatusCode.NoContent)
+                {
+                    return deletededItem.Resource;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Given key is invalid");
+                }
+            }
+            catch (CosmosException ex)
+            {
+                Console.WriteLine("Unknown Exception - " + ex.Message);
                 throw;
             }
         }

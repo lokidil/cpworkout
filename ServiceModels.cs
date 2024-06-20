@@ -26,6 +26,16 @@ namespace CPWorkout
         public QuestionRequest[]? Questions { get; set; }
     }
 
+    public class ProgramUpdateRequest: ProgramRequest
+    {
+        public required string Id { get; set; }
+    }
+
+    public class QuestionUpdateRequest: QuestionRequest
+    {
+        public required string Id { get; set; }
+    }
+
     public class ProgramIdRequest
     {
         public required string Id { get; set; }
